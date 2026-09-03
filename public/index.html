@@ -16,17 +16,17 @@
           <button id="openFiltersButton" class="ghostIconBtn mobileOnly" type="button" aria-label="打开会话导航">
             ☰
           </button>
-          <div class="brandMark">管</div>
+          <div class="brandMark">ASB</div>
           <div class="brandCopy">
-            <div class="brandTitle">统一 AI 管家</div>
-            <div class="brandMeta">AI 协作工作台 · 机器与模型总控台</div>
+            <div class="brandTitle">Agent Session Bridge</div>
+            <div class="brandMeta">Local session manager</div>
           </div>
         </div>
 
         <div class="topActions">
-          <div class="brandSignalPill" aria-label="管家总控台范围">
-            <span>AI Butler Core</span>
-            <strong>Machines · Models · Services</strong>
+          <div class="brandSignalPill" aria-label="管理范围">
+            <span>Session Control</span>
+            <strong>Sessions · Machines · Services</strong>
           </div>
           <div id="healthBadge" class="pill muted">
             <span class="dot"></span>
@@ -43,7 +43,7 @@
       <div class="controlContextBar" aria-label="总控上下文">
         <div class="controlContextItem">
           <span class="contextLabel">工作台</span>
-          <strong>统一 AI 管家</strong>
+          <strong>Agent Session Bridge</strong>
         </div>
         <div class="controlContextItem">
           <span class="contextLabel">模型</span>
@@ -61,20 +61,20 @@
 
       <main class="workbench">
         <aside id="filterSheet" class="filterSheet workbenchSidebar navRail side sideShell" aria-label="会话筛选面板">
-          <nav class="leftRail asbLeftRail" aria-label="AI 管家分区">
+          <nav class="leftRail asbLeftRail" aria-label="功能分区">
             <button class="railBtn active" type="button" title="总控">总</button>
             <button class="railBtn" type="button" title="会话">会</button>
             <button class="railBtn" type="button" title="机器">机</button>
             <button class="railBtn" type="button" title="审批">审</button>
             <div class="railDivider" aria-hidden="true"></div>
-            <button class="railBtn railToggle" type="button" title="管家">管</button>
+            <button class="railBtn railToggle" type="button" title="导航">ASB</button>
           </nav>
 
           <div class="sideContent asbSideContent">
             <div class="sidebarIntro">
-            <p class="eyebrow">Butler Navigator</p>
-            <h2>管家导航</h2>
-            <p class="sidebarCopy">从线程切入机器、模型和服务，审批、终端和工作区状态都围绕当前目标展开。</p>
+            <p class="eyebrow">Session Navigator</p>
+            <h2>会话导航</h2>
+            <p class="sidebarCopy">选择会话、机器或服务，并查看当前目标的审批、终端和工作区状态。</p>
           </div>
 
           <div class="sidebarStats">
@@ -181,11 +181,11 @@
         <section class="workspaceColumn mainStage main">
           <section class="heroCard stageHero">
             <div class="heroPrimary">
-              <div class="heroBrandLockup" aria-label="统一 AI 管家总控台">
-                <span class="heroBrandGlyph">AI</span>
+              <div class="heroBrandLockup" aria-label="Agent Session Bridge">
+                <span class="heroBrandGlyph">ASB</span>
                 <div>
-                  <strong>统一 AI 管家</strong>
-                  <span>机器 · 模型 · 服务总控台</span>
+                  <strong>Agent Session Bridge</strong>
+                  <span>Sessions · Machines · Services</span>
                 </div>
               </div>
               <p class="eyebrow">Current Command Target</p>
@@ -219,27 +219,27 @@
           <section class="butlerCard stageButler">
             <div class="butlerHeader">
               <div class="butlerIdentityMark" aria-hidden="true">
-                <span>AI</span>
-                <small>CORE</small>
+                <span>ASB</span>
+                <small>CTRL</small>
               </div>
               <div class="butlerHeaderCopy">
-                <p class="eyebrow">AI Butler Command</p>
-                <h2>机器与模型总控台</h2>
+                <p class="eyebrow">Service Control</p>
+                <h2>服务与运行时</h2>
                 <p class="chatSubtle">
-                  统一管理服务器、Codex、Claude Code、Gemini 与服务动作；选中目标后直接诊断、拉状态、追日志。
+                  查看服务器、Codex、Claude Code、Gemini 和外部服务；选择目标后可以诊断、查询状态或查看日志。
                 </p>
               </div>
 
               <div class="butlerHeaderActions">
                 <div id="butlerStatusPill" class="pill muted">
                   <span class="dot"></span>
-                  <span>管家初始化中</span>
+                  <span>正在加载服务状态</span>
                 </div>
-                <button id="butlerRefreshButton" class="ghostBtn compactBtn" type="button">刷新管家</button>
+                <button id="butlerRefreshButton" class="ghostBtn compactBtn" type="button">刷新</button>
               </div>
             </div>
 
-            <div class="butlerScopeStrip" aria-label="统一管家能力范围">
+            <div class="butlerScopeStrip" aria-label="服务管理范围">
               <div class="scopeNode">
                 <span>Machines</span>
                 <strong>服务器接入与巡检</strong>
@@ -339,7 +339,7 @@
             <div class="chatHeader">
               <div class="chatHeaderCopy">
                 <p class="eyebrow">Conversation</p>
-                <h2>向管家下达指令</h2>
+                <h2>发送指令</h2>
                 <p class="chatSubtle">
                   普通文本直接发给当前模型会话；以 <code>/</code> 开头则执行机器、工作区或服务命令。
                 </p>
@@ -401,7 +401,7 @@
         <aside class="inspectorRail supportRail previewSide previewCard">
           <section class="railCard railCard--focus">
             <div class="sheetSubHeader">
-              <span>管家视角</span>
+              <span>当前目标</span>
               <div id="selectedBadge" class="pill muted">
                 <span class="dot"></span>
                 <span>未选择</span>

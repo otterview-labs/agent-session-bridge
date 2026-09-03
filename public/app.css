@@ -1740,7 +1740,7 @@ h2 {
   }
 }
 
-/* Refinement pass — AI butler control desk */
+/* Refinement pass — session control desk */
 
 .app {
   position: relative;
@@ -3287,7 +3287,7 @@ h2 {
 }
 
 .chatHeaderCopy h2::before {
-  content: "AI Butler";
+  content: "COMMAND";
   display: block;
   margin-bottom: 5px;
   color: rgba(141, 185, 255, 0.8);

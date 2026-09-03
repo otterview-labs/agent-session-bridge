@@ -1,4 +1,4 @@
-const SHELL_CACHE = 'asb-shell-v4';
+const SHELL_CACHE = 'asb-shell-v5';
 
 const SHELL_NAVIGATIONS = new Set(['/', '/ui', '/index.html']);
 

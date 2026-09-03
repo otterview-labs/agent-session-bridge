@@ -1,7 +1,7 @@
 {
   "name": "Agent Session Bridge",
   "short_name": "ASB",
-  "description": "HAPI 风格的本地 Agent 控制面：会话、审批、文件、终端与机器状态。",
+  "description": "Manage local Codex, Claude Code, and Gemini CLI sessions.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
