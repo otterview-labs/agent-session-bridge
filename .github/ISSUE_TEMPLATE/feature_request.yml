@@ -1,0 +1,24 @@
+name: Feature request
+description: Propose a focused capability or improvement
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case
+      description: What workflow or problem should this address?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+    validations:
+      required: true
+  - type: textarea
+    id: security
+    attributes:
+      label: Security and trust boundary
+      description: Explain effects on authentication, filesystem access, command execution, or external services.

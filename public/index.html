@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#2563eb" />
+    <title>Agent Session Bridge</title>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/app.css" />
+  </head>
+  <body class="app">
+    <div class="shell">
+      <header class="top topBar">
+        <div class="brand">
+          <button id="openFiltersButton" class="ghostIconBtn mobileOnly" type="button" aria-label="打开会话导航">
+            ☰
+          </button>
+          <div class="brandMark">管</div>
+          <div class="brandCopy">
+            <div class="brandTitle">统一 AI 管家</div>
+            <div class="brandMeta">AI 协作工作台 · 机器与模型总控台</div>
+          </div>
+        </div>
+
+        <div class="topActions">
+          <div class="brandSignalPill" aria-label="管家总控台范围">
+            <span>AI Butler Core</span>
+            <strong>Machines · Models · Services</strong>
+          </div>
+          <div id="healthBadge" class="pill muted">
+            <span class="dot"></span>
+            <span>检查中</span>
+          </div>
+          <div id="targetPill" class="pill muted">
+            <span class="dot"></span>
+            <span>未选择机器</span>
+          </div>
+          <button id="refreshButton" class="ghostBtn" type="button">刷新</button>
+        </div>
+      </header>
+
+      <div class="controlContextBar" aria-label="总控上下文">
+        <div class="controlContextItem">
+          <span class="contextLabel">工作台</span>
+          <strong>统一 AI 管家</strong>
+        </div>
+        <div class="controlContextItem">
+          <span class="contextLabel">模型</span>
+          <strong>Codex · Claude · Gemini</strong>
+        </div>
+        <div class="controlContextItem">
+          <span class="contextLabel">机器</span>
+          <strong>服务器与服务总控</strong>
+        </div>
+        <div class="controlContextItem">
+          <span class="contextLabel">模式</span>
+          <strong>安全审批 · 远程执行</strong>
+        </div>
+      </div>
+
+      <main class="workbench">
+        <aside id="filterSheet" class="filterSheet workbenchSidebar navRail side sideShell" aria-label="会话筛选面板">
+          <nav class="leftRail asbLeftRail" aria-label="AI 管家分区">
+            <button class="railBtn active" type="button" title="总控">总</button>
+            <button class="railBtn" type="button" title="会话">会</button>
+            <button class="railBtn" type="button" title="机器">机</button>
+            <button class="railBtn" type="button" title="审批">审</button>
+            <div class="railDivider" aria-hidden="true"></div>
+            <button class="railBtn railToggle" type="button" title="管家">管</button>
+          </nav>
+
+          <div class="sideContent asbSideContent">
+            <div class="sidebarIntro">
+            <p class="eyebrow">Butler Navigator</p>
+            <h2>管家导航</h2>
+            <p class="sidebarCopy">从线程切入机器、模型和服务，审批、终端和工作区状态都围绕当前目标展开。</p>
+          </div>
+
+          <div class="sidebarStats">
+            <div class="sidebarStat">
+              <span>线程数</span>
+              <strong id="sidebarSessionCount">0</strong>
+            </div>
+            <div class="sidebarStat">
+              <span>在线</span>
+              <strong id="sidebarLiveCount">0</strong>
+            </div>
+            <div class="sidebarStat wide">
+              <span>当前焦点</span>
+              <strong id="sidebarSelectedName">未选择</strong>
+            </div>
+          </div>
+
+          <div class="sheetHeader">
+            <div>
+              <p class="eyebrow">Sessions</p>
+              <h3 class="sidebarSectionTitle">线程列表</h3>
+            </div>
+            <button id="closeFiltersButton" class="ghostBtn compactBtn mobileOnly" type="button">关闭</button>
+          </div>
+
+          <div class="sheetSection slimSection">
+            <label class="field">
+              <span>搜索会话</span>
+              <input id="sessionFilterInput" type="text" placeholder="按名字或目录筛选" autocomplete="off" />
+            </label>
+          </div>
+
+          <div class="sheetSection grow">
+            <div class="sheetSubHeader">
+              <span>全部线程</span>
+              <button id="listCommandButton" class="ghostBtn compactBtn" type="button">/list</button>
+            </div>
+            <div id="sessionsList" class="sessionsList empty">暂无会话</div>
+          </div>
+
+          <div class="sheetSection">
+            <div class="sheetSubHeader">
+              <span>新建会话</span>
+            </div>
+            <form id="createSessionForm" class="stack">
+              <label class="field">
+                <span>目标机器</span>
+                <select id="sessionMachineSelect">
+                  <option value="">自动选择本机</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Agent</span>
+                <select id="agentTypeSelect">
+                  <option value="codex">codex</option>
+                  <option value="claude-code">claude-code</option>
+                  <option value="gemini">gemini</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>会话名</span>
+                <input id="sessionNameInput" type="text" placeholder="demo" autocomplete="off" required />
+              </label>
+              <label class="field">
+                <span>工作目录</span>
+                <input
+                  id="workspaceInput"
+                  type="text"
+                  placeholder="/path/to/your/projects/demo"
+                  required
+                />
+              </label>
+              <button class="primaryBtn fullWidth" type="submit">创建</button>
+            </form>
+          </div>
+
+          <div class="sheetSection">
+            <div class="sheetSubHeader">
+              <span>访问配置</span>
+            </div>
+            <div class="stack">
+              <label class="field">
+                <span>API Token（可选）</span>
+                <input
+                  id="apiTokenInput"
+                  type="password"
+                  autocomplete="off"
+                  placeholder="如果 ASB_API_TOKEN 有值，则填这里"
+                />
+              </label>
+              <label class="field">
+                <span>Actor ID</span>
+                <input id="actorInput" type="text" value="web-ui" />
+              </label>
+              <button id="testNotificationButton" class="ghostBtn compactBtn" type="button">发送测试通知</button>
+              <button id="notificationButton" class="ghostBtn compactBtn" type="button">启用浏览器通知</button>
+              <div id="pwaStatus" class="formHint">PWA 正在初始化</div>
+            </div>
+          </div>
+          </div>
+        </aside>
+
+        <section class="workspaceColumn mainStage main">
+          <section class="heroCard stageHero">
+            <div class="heroPrimary">
+              <div class="heroBrandLockup" aria-label="统一 AI 管家总控台">
+                <span class="heroBrandGlyph">AI</span>
+                <div>
+                  <strong>统一 AI 管家</strong>
+                  <span>机器 · 模型 · 服务总控台</span>
+                </div>
+              </div>
+              <p class="eyebrow">Current Command Target</p>
+              <h1 id="heroSessionTitle">未选择会话</h1>
+              <p id="heroSessionMeta" class="chatSubtle">
+                当前机器、模型会话、工作目录与最近上下文会在这里集中呈现。
+              </p>
+            </div>
+
+            <div class="heroMetaStrip">
+              <div class="heroMetaItem">
+                <span>Actor</span>
+                <strong id="heroActor">web-ui</strong>
+              </div>
+              <div class="heroMetaItem">
+                <span>状态</span>
+                <strong id="heroStatus">未选择</strong>
+              </div>
+              <div class="heroMetaItem wide">
+                <span>工作目录</span>
+                <strong id="heroWorkspacePath">-</strong>
+              </div>
+            </div>
+
+            <div class="heroActions">
+              <button id="currentCommandButton" class="ghostBtn compactBtn" type="button">/current</button>
+              <button id="watchRunButton" class="ghostBtn compactBtn" type="button">/watch run</button>
+            </div>
+          </section>
+
+          <section class="butlerCard stageButler">
+            <div class="butlerHeader">
+              <div class="butlerIdentityMark" aria-hidden="true">
+                <span>AI</span>
+                <small>CORE</small>
+              </div>
+              <div class="butlerHeaderCopy">
+                <p class="eyebrow">AI Butler Command</p>
+                <h2>机器与模型总控台</h2>
+                <p class="chatSubtle">
+                  统一管理服务器、Codex、Claude Code、Gemini 与服务动作；选中目标后直接诊断、拉状态、追日志。
+                </p>
+              </div>
+
+              <div class="butlerHeaderActions">
+                <div id="butlerStatusPill" class="pill muted">
+                  <span class="dot"></span>
+                  <span>管家初始化中</span>
+                </div>
+                <button id="butlerRefreshButton" class="ghostBtn compactBtn" type="button">刷新管家</button>
+              </div>
+            </div>
+
+            <div class="butlerScopeStrip" aria-label="统一管家能力范围">
+              <div class="scopeNode">
+                <span>Machines</span>
+                <strong>服务器接入与巡检</strong>
+              </div>
+              <div class="scopeNode">
+                <span>Models</span>
+                <strong>Codex · Claude · Gemini</strong>
+              </div>
+              <div class="scopeNode">
+                <span>Services</span>
+                <strong>状态 · 日志 · 启停 · 重启</strong>
+              </div>
+            </div>
+
+            <div class="butlerMetricStrip">
+              <div class="butlerMetric">
+                <span>服务器</span>
+                <strong id="butlerServerCount">0</strong>
+              </div>
+              <div class="butlerMetric">
+                <span>服务</span>
+                <strong id="butlerServiceCount">0</strong>
+              </div>
+              <div class="butlerMetric">
+                <span>运行时</span>
+                <strong id="butlerRuntimeCount">0</strong>
+              </div>
+              <div class="butlerMetric">
+                <span>待处理</span>
+                <strong id="butlerPendingCount">0</strong>
+              </div>
+            </div>
+
+            <div class="butlerRuntimeStrip">
+              <div class="sheetSubHeader">
+                <span>Agent 运行时</span>
+              </div>
+              <div id="butlerRuntimeList" class="runtimeList empty">正在加载运行时</div>
+            </div>
+
+            <div class="butlerGrid">
+              <section class="butlerPane">
+                <div class="butlerPaneHeader">
+                  <span>服务器</span>
+                </div>
+                <div id="butlerServerList" class="stackedList empty">正在加载服务器</div>
+              </section>
+
+              <section class="butlerPane">
+                <div class="butlerPaneHeader">
+                  <span>服务</span>
+                </div>
+                <div id="butlerServiceList" class="stackedList empty">先选择一个服务器</div>
+              </section>
+
+              <section class="butlerPane detailPane">
+                <div class="butlerPaneHeader">
+                  <div>
+                    <span id="butlerServiceTitle" class="butlerTitle">未选择服务</span>
+                    <div id="butlerServiceMeta" class="butlerMetaText">请选择左侧服务查看详情。</div>
+                  </div>
+                  <div id="butlerServiceStatusPill" class="pill muted">
+                    <span class="dot"></span>
+                    <span>未检查</span>
+                  </div>
+                </div>
+
+                <div class="butlerActionRow">
+                  <button id="butlerDoctorButton" class="ghostBtn compactBtn" type="button">诊断</button>
+                  <button id="butlerStatusButton" class="ghostBtn compactBtn" type="button">状态</button>
+                  <button id="butlerLogsButton" class="ghostBtn compactBtn" type="button">日志</button>
+                  <button id="butlerStartButton" class="ghostBtn compactBtn" type="button">启动</button>
+                  <button id="butlerStopButton" class="dangerBtn compactBtn" type="button">停止</button>
+                  <button id="butlerRestartButton" class="primaryBtn compactBtn" type="button">重启</button>
+                </div>
+
+                <div id="butlerServiceSummary" class="summaryBlock">
+                  <span class="summaryLabel">服务摘要</span>
+                  <div class="summaryValue">选择服务后查看状态、端口、路径与健康检查信息。</div>
+                </div>
+
+                <form id="butlerExecForm" class="terminalForm">
+                  <input id="butlerExecInput" type="text" placeholder="df -h / docker ps / ss -lntp" autocomplete="off" />
+                  <button id="butlerExecButton" class="primaryBtn compactBtn" type="submit">远程执行</button>
+                </form>
+
+                <div class="summaryBlock">
+                  <span class="summaryLabel">最近回显</span>
+                  <div id="butlerPreviewTitle" class="summaryValue">未选择服务</div>
+                  <pre id="butlerPreviewContent" class="filePreview">服务状态、日志与诊断输出会显示在这里。</pre>
+                </div>
+              </section>
+            </div>
+          </section>
+
+          <section class="chatCard stageConversation">
+            <div class="chatHeader">
+              <div class="chatHeaderCopy">
+                <p class="eyebrow">Conversation</p>
+                <h2>向管家下达指令</h2>
+                <p class="chatSubtle">
+                  普通文本直接发给当前模型会话；以 <code>/</code> 开头则执行机器、工作区或服务命令。
+                </p>
+              </div>
+
+              <div class="chatHeaderActions">
+                <div id="supervisorPill" class="pill muted">
+                  <span class="dot"></span>
+                  <span>巡检状态</span>
+                </div>
+                <button id="tailButton" class="ghostBtn compactBtn" type="button">查看输出</button>
+              </div>
+            </div>
+
+            <div class="conversationBar">
+              <div id="conversationSessionPill" class="contextPill">
+                <span class="contextLabel">线程</span>
+                <strong>未选择</strong>
+              </div>
+              <div id="conversationStatusPill" class="contextPill">
+                <span class="contextLabel">状态</span>
+                <strong>待命</strong>
+              </div>
+              <div id="conversationWorkspacePill" class="contextPill wide" data-variant="wide">
+                <span class="contextLabel">目录</span>
+                <strong>-</strong>
+              </div>
+            </div>
+
+            <div id="chatFeed" class="chatFeed"></div>
+
+            <form id="chatComposerForm" class="composer">
+              <textarea
+                id="chatInput"
+                rows="1"
+                placeholder="输入消息，Enter 发送，Shift + Enter 换行"
+              ></textarea>
+              <div class="composerFooter">
+                <div class="composerHintGroup">
+                  <div class="composerHint isPrimary">
+                    <span id="selectedMachineMeta">未选择机器</span>
+                  </div>
+                  <div class="composerHint">
+                    <span>Enter 发送</span>
+                  </div>
+                  <div class="composerHint">
+                    <span>Shift + Enter 换行</span>
+                  </div>
+                </div>
+                <div class="composerActions">
+                  <button id="voiceButton" class="ghostBtn compactBtn" type="button">语音</button>
+                  <button id="sendButton" class="primaryBtn" type="submit">发送</button>
+                </div>
+              </div>
+            </form>
+          </section>
+        </section>
+
+        <aside class="inspectorRail supportRail previewSide previewCard">
+          <section class="railCard railCard--focus">
+            <div class="sheetSubHeader">
+              <span>管家视角</span>
+              <div id="selectedBadge" class="pill muted">
+                <span class="dot"></span>
+                <span>未选择</span>
+              </div>
+            </div>
+
+            <div class="targetSummary">
+              <div class="summaryRow">
+                <span class="summaryLabel">名称</span>
+                <strong id="selectedTitle">未选择机器</strong>
+              </div>
+              <div class="summaryRow">
+                <span class="summaryLabel">目录</span>
+                <span id="selectedWorkspaceMeta" class="summaryValue">-</span>
+              </div>
+              <div class="summaryRow">
+                <span class="summaryLabel">最近活跃</span>
+                <span id="selectedLastActive" class="summaryValue">-</span>
+              </div>
+              <div class="summaryBlock">
+                <span class="summaryLabel">最近摘要</span>
+                <div id="selectedDigest" class="summaryDigest">-</div>
+              </div>
+            </div>
+
+            <div class="miniActionRow">
+              <button id="useButton" class="ghostBtn compactBtn" type="button">设为当前</button>
+              <button id="inspectButton" class="ghostBtn compactBtn" type="button">检查</button>
+              <button id="stopButton" class="dangerBtn compactBtn" type="button">停止</button>
+            </div>
+          </section>
+
+          <section class="railCard railCard--status">
+            <div class="sheetSubHeader">
+              <span>总控台状态</span>
+            </div>
+
+            <div class="metricsGrid">
+              <div class="metricItem">
+                <span class="metricLabel">会话总数</span>
+                <span id="sessionCount" class="metricValue">0</span>
+              </div>
+              <div class="metricItem">
+                <span class="metricLabel">最近巡检</span>
+                <span id="lastCompleted" class="metricValue">-</span>
+              </div>
+              <div class="metricItem">
+                <span class="metricLabel">Actor</span>
+                <span id="actorEcho" class="metricValue mono">web-ui</span>
+              </div>
+              <div class="metricItem">
+                <span class="metricLabel">当前目标</span>
+                <span id="selectedContext" class="metricValue">未选择机器</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="railCard railCard--queue">
+            <div class="sheetSubHeader">
+              <span>审批队列</span>
+              <button id="approvalsRefreshButton" class="ghostBtn compactBtn" type="button">刷新</button>
+            </div>
+            <div id="approvalsList" class="stackedList empty">暂无待审批</div>
+          </section>
+
+          <section class="railCard railCard--machines">
+            <div class="sheetSubHeader">
+              <span>机器列表</span>
+              <button id="machinesRefreshButton" class="ghostBtn compactBtn" type="button">刷新</button>
+            </div>
+            <div id="machinesList" class="stackedList empty">正在加载机器</div>
+          </section>
+
+          <section class="railCard railCard--workspace">
+            <div class="sheetSubHeader">
+              <span>工作区</span>
+              <div class="railCommandRow">
+                <button id="workspaceUpButton" class="ghostBtn compactBtn" type="button">返回上级</button>
+                <button id="workspaceRefreshButton" class="ghostBtn compactBtn" type="button">刷新</button>
+              </div>
+            </div>
+
+            <div class="targetSummary">
+              <div class="summaryRow">
+                <span class="summaryLabel">当前位置</span>
+                <span id="workspaceCurrentPath" class="summaryValue">/</span>
+              </div>
+              <div class="summaryRow">
+                <span class="summaryLabel">Git</span>
+                <span id="workspaceGitBranch" class="summaryValue">未选择会话</span>
+              </div>
+            </div>
+
+            <div class="summaryBlock">
+              <span class="summaryLabel">Git 变更</span>
+              <div id="workspaceGitStatusList" class="stackedList empty">未选择会话</div>
+            </div>
+
+            <div class="summaryBlock">
+              <span class="summaryLabel">Diff</span>
+              <div id="workspaceDiffTitle" class="summaryValue">-</div>
+              <pre id="workspaceDiffContent" class="filePreview">选择 Git 变更查看 diff</pre>
+            </div>
+
+            <div class="summaryBlock">
+              <span class="summaryLabel">文件</span>
+              <div id="workspaceFilesList" class="stackedList empty">未选择会话</div>
+            </div>
+
+            <div class="summaryBlock">
+              <span class="summaryLabel">预览</span>
+              <div id="workspaceFilePreviewTitle" class="summaryValue">-</div>
+              <pre id="workspaceFilePreviewContent" class="filePreview">选择一个文件查看内容</pre>
+            </div>
+          </section>
+
+          <section class="railCard railCard--terminal">
+            <div class="sheetSubHeader">
+              <span>终端</span>
+              <button id="terminalRefreshButton" class="ghostBtn compactBtn" type="button">刷新</button>
+            </div>
+            <form id="terminalForm" class="terminalForm">
+              <input id="terminalInput" type="text" placeholder="pwd / ls / git status ..." autocomplete="off" />
+              <button id="terminalRunButton" class="primaryBtn compactBtn" type="submit">执行</button>
+            </form>
+            <div id="terminalRiskHint" class="formHint">只读命令直接执行，危险命令会进入审批。</div>
+            <div id="terminalCommandsList" class="stackedList empty">暂无终端命令</div>
+          </section>
+
+          <section class="railCard railCard--quick">
+            <div class="sheetSubHeader">
+              <span>快捷动作</span>
+            </div>
+            <div class="railCommandRow">
+              <button id="currentQuickButton" class="ghostBtn compactBtn" type="button">/current</button>
+              <button id="inspectQuickButton" class="ghostBtn compactBtn" type="button">/inspect</button>
+              <button id="tailQuickButton" class="ghostBtn compactBtn" type="button">/tail</button>
+              <button id="supervisorQuickButton" class="ghostBtn compactBtn" type="button">巡检</button>
+            </div>
+            <div class="hintList">
+              <div class="hintItem">
+                <strong>Enter</strong>
+                <span>直接发送给当前线程</span>
+              </div>
+              <div class="hintItem">
+                <strong>/inspect</strong>
+                <span>查看当前线程状态</span>
+              </div>
+              <div class="hintItem">
+                <strong>/tail</strong>
+                <span>抓最近输出做追踪</span>
+              </div>
+            </div>
+          </section>
+        </aside>
+      </main>
+    </div>
+
+    <div id="sheetBackdrop" class="sheetBackdrop hidden"></div>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
