@@ -157,13 +157,14 @@
             </div>
             <div class="stack">
               <label class="field">
-                <span>API Token（可选）</span>
+                <span>API Token（仅当前页面）</span>
                 <input
                   id="apiTokenInput"
                   type="password"
                   autocomplete="off"
                   placeholder="如果 ASB_API_TOKEN 有值，则填这里"
                 />
+                <span class="formHint">Token 仅保存在页面内存中；刷新或关闭页面后需要重新输入。</span>
               </label>
               <label class="field">
                 <span>Actor ID</span>

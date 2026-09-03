@@ -30,4 +30,4 @@ Include the affected version or commit, reproduction steps, impact, and any sugg
 
 The current API token represents one trusted operator. Client-supplied `actorId` values are audit labels, not authenticated identities, and the approval flow is intended to prevent accidental actions rather than provide multi-user separation of duties. Do not use one instance as a hostile multi-tenant service.
 
-The browser keeps its API token in `sessionStorage` for the current tab; it is not persisted to `localStorage`. Scripts running on the same origin can still access it, so use a trusted browser and origin, close the tab when finished, and rotate the token if the browser or machine may have been compromised.
+The browser keeps its API token only in the current page's memory and removes values persisted by earlier versions from both `localStorage` and `sessionStorage`. Refreshing or closing the page clears the active token. Scripts running on the same origin can still access in-memory credentials, so use a trusted browser and origin, and rotate the token if the browser or machine may have been compromised.

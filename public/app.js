@@ -1,10 +1,18 @@
+import { createApiTokenState } from './api-token-state.js';
+
+class ApiResponseError extends Error {
+  constructor(status, message) {
+    super(message);
+    this.name = 'ApiResponseError';
+    this.status = status;
+  }
+}
+
 const mobileMedia = window.matchMedia('(max-width: 1080px)');
-const legacyApiToken = localStorage.getItem('asb.apiToken') || '';
-localStorage.removeItem('asb.apiToken');
+const apiTokenState = createApiTokenState({ localStorage, sessionStorage });
 
 const state = {
   actorId: localStorage.getItem('asb.actorId') || 'web-ui',
-  apiToken: sessionStorage.getItem('asb.apiToken') || legacyApiToken,
   approvals: [],
   butlerDoctor: null,
   butlerOverview: null,
@@ -142,7 +150,7 @@ const elements = {
 };
 
 elements.actorInput.value = state.actorId;
-elements.apiTokenInput.value = state.apiToken;
+elements.apiTokenInput.value = apiTokenState.get();
 elements.actorEcho.textContent = state.actorId;
 elements.heroActor.textContent = state.actorId;
 
@@ -161,16 +169,10 @@ function bindEvents() {
     elements.heroActor.textContent = state.actorId;
   });
 
-  elements.apiTokenInput.addEventListener('input', () => {
-    state.apiToken = elements.apiTokenInput.value.trim();
-
-    if (state.apiToken) {
-      sessionStorage.setItem('asb.apiToken', state.apiToken);
-    } else {
-      sessionStorage.removeItem('asb.apiToken');
-    }
-
+  elements.apiTokenInput.addEventListener('change', () => {
+    apiTokenState.set(elements.apiTokenInput.value);
     connectEventStream();
+    void refreshAll();
   });
 
   elements.notificationButton.addEventListener('click', () => {
@@ -503,9 +505,20 @@ async function refreshAll(options = {}) {
     ]);
     await refreshWorkspacePanel({ silent: options.silent });
   } catch (error) {
-    setPillState(elements.healthBadge, 'danger', '接口离线');
+    const needsToken = error instanceof ApiResponseError && error.status === 401;
+    setPillState(
+      elements.healthBadge,
+      needsToken ? 'warn' : 'danger',
+      needsToken ? '需要 API Token' : '接口离线',
+    );
     if (!options.silent) {
-      appendMessage('system', '刷新失败', formatError(error));
+      appendMessage(
+        'system',
+        needsToken ? '需要 API Token' : '刷新失败',
+        needsToken
+          ? '请在访问配置中输入 Token。Token 仅保存在当前页面内存中。'
+          : formatError(error),
+      );
     }
   } finally {
     if (!options.silent) {
@@ -1086,8 +1099,9 @@ async function apiPost(pathname, body) {
 async function api(pathname, options) {
   const headers = new Headers(options.headers || {});
 
-  if (state.apiToken) {
-    headers.set('Authorization', `Bearer ${state.apiToken}`);
+  const apiToken = apiTokenState.get();
+  if (apiToken) {
+    headers.set('Authorization', `Bearer ${apiToken}`);
   }
 
   const response = await fetch(pathname, {
@@ -1105,7 +1119,7 @@ async function api(pathname, options) {
       payload && typeof payload === 'object' && 'error' in payload
         ? payload.error
         : `HTTP ${response.status}`;
-    throw new Error(String(message));
+    throw new ApiResponseError(response.status, String(message));
   }
 
   return payload;
@@ -1828,8 +1842,9 @@ async function consumeEventStream(signal) {
     Accept: 'text/event-stream',
   });
 
-  if (state.apiToken) {
-    headers.set('Authorization', `Bearer ${state.apiToken}`);
+  const apiToken = apiTokenState.get();
+  if (apiToken) {
+    headers.set('Authorization', `Bearer ${apiToken}`);
   }
 
   if (state.lastEventId) {
@@ -1842,6 +1857,11 @@ async function consumeEventStream(signal) {
       headers,
       signal,
     });
+
+    if (response.status === 401) {
+      setPillState(elements.healthBadge, 'warn', '需要 API Token');
+      return;
+    }
 
     if (!response.ok || !response.body) {
       throw new Error(`Event stream failed with HTTP ${response.status}`);

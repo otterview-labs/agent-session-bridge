@@ -441,7 +441,7 @@ ASB_FEISHU_REPLY_IN_THREAD=true
 | `ASB_HTTP_HOST` | HTTP 服务监听地址 |
 | `ASB_HTTP_PORT` | HTTP 服务端口 |
 | `ASB_ALLOWED_HTTP_HOSTS` | 非回环监听允许接受的 Host 名称列表 |
-| `ASB_API_TOKEN` | HTTP API 鉴权令牌；非回环监听时至少 32 字符 |
+| `ASB_API_TOKEN` | HTTP API 鉴权令牌；限 4096 个可见 ASCII 字符且不含空格，非回环监听时至少 32 字符 |
 | `ASB_AUTO_CONFIRM_WORKSPACE_TRUST` | 是否自动确认 Agent 的目录信任提示，默认关闭 |
 | `ASB_SUPERVISOR_ENABLED` | 是否启用监督巡检 |
 | `ASB_SUPERVISOR_INTERVAL_MS` | 巡检间隔 |
@@ -456,8 +456,9 @@ ASB_FEISHU_REPLY_IN_THREAD=true
 
 - 不要把 `.env` 提交到仓库
 - 保持默认的 `ASB_HTTP_HOST=127.0.0.1`；不要直接监听公网地址
-- 绑定非回环地址时，程序会强制要求至少 32 字符的 `ASB_API_TOKEN`、`ASB_ALLOWED_HTTP_HOSTS` 和 `ASB_ALLOWED_WORKSPACE_ROOTS`
+- 绑定非回环地址时，程序会强制要求 32–4096 个可见 ASCII 字符的 `ASB_API_TOKEN`、`ASB_ALLOWED_HTTP_HOSTS` 和 `ASB_ALLOWED_WORKSPACE_ROOTS`
 - 可使用 `openssl rand -hex 32` 生成随机 API Token
+- Web UI 只在当前页面内存中持有 API Token，不会写入 Web Storage；刷新或关闭页面后需要重新输入
 - 启用飞书入口时必须至少配置一项 `open_id` 或 `chat_id` 白名单，否则程序拒绝启动
 - `ASB_AUTO_CONFIRM_WORKSPACE_TRUST` 默认关闭；只对你完全信任的目录开启
 - 审批机制用于单一可信操作者避免误操作，不是多租户身份隔离；`actorId` 只是审计标签

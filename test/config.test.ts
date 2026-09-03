@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { parseConfig } from '../src/config/env.js';
+import { MAX_API_TOKEN_CHARACTERS, parseConfig } from '../src/config/env.js';
 
 test('keeps localhost operation available without an API token', () => {
   const config = parseConfig({});
@@ -45,6 +45,27 @@ test('requires a strong API token and workspace roots for remote binding', () =>
 
   assert.equal(config.httpHost, '0.0.0.0');
   assert.deepEqual(config.allowedHttpHosts, ['asb.example.test']);
+});
+
+test('requires API tokens that can be transported in HTTP headers', () => {
+  assert.throws(
+    () => parseConfig({ ASB_API_TOKEN: 'a'.repeat(MAX_API_TOKEN_CHARACTERS + 1) }),
+    /ASB_API_TOKEN must contain at most/u,
+  );
+  assert.throws(
+    () => parseConfig({ ASB_API_TOKEN: 'token with spaces' }),
+    /visible ASCII characters without spaces/u,
+  );
+  assert.throws(
+    () => parseConfig({ ASB_API_TOKEN: '令牌' }),
+    /visible ASCII characters without spaces/u,
+  );
+
+  const maximumToken = 'a'.repeat(MAX_API_TOKEN_CHARACTERS);
+  assert.equal(parseConfig({ ASB_API_TOKEN: maximumToken }).apiToken, maximumToken);
+
+  const token = 'a'.repeat(32);
+  assert.equal(parseConfig({ ASB_API_TOKEN: `  ${token}  ` }).apiToken, token);
 });
 
 test('does not treat malformed 127-like hostnames as loopback', () => {

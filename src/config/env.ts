@@ -3,6 +3,8 @@ import { isIP } from 'node:net';
 
 import { z } from 'zod';
 
+export const MAX_API_TOKEN_CHARACTERS = 4096;
+
 function booleanFromEnv(defaultValue: boolean) {
   return z.preprocess((value) => {
     if (typeof value === 'boolean') {
@@ -27,10 +29,20 @@ function booleanFromEnv(defaultValue: boolean) {
   }, z.boolean());
 }
 
+const apiTokenSchema = z
+  .string()
+  .trim()
+  .max(MAX_API_TOKEN_CHARACTERS, {
+    message: `ASB_API_TOKEN must contain at most ${MAX_API_TOKEN_CHARACTERS} characters`,
+  })
+  .refine(hasOnlyVisibleAsciiCharacters, {
+    message: 'ASB_API_TOKEN must use visible ASCII characters without spaces',
+  });
+
 const envSchema = z.object({
   ASB_ALLOWED_HTTP_HOSTS: z.string().optional(),
   ASB_ALLOWED_WORKSPACE_ROOTS: z.string().optional(),
-  ASB_API_TOKEN: z.string().optional(),
+  ASB_API_TOKEN: apiTokenSchema.optional(),
   ASB_AUTO_CONFIRM_WORKSPACE_TRUST: booleanFromEnv(false).default(false),
   ASB_CLAUDE_BIN: z.string().default('claude'),
   ASB_CODEX_BIN: z.string().default('codex --no-alt-screen'),
@@ -182,6 +194,17 @@ function isLoopbackHost(host: string): boolean {
     normalized === '::1' ||
     (isIP(normalized) === 4 && normalized.startsWith('127.'))
   );
+}
+
+function hasOnlyVisibleAsciiCharacters(value: string): boolean {
+  for (const character of value) {
+    const codePoint = character.codePointAt(0);
+    if (codePoint === undefined || codePoint < 0x21 || codePoint > 0x7e) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function isWildcardHost(host: string): boolean {

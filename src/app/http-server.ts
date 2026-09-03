@@ -6,7 +6,7 @@ import nodePath from 'node:path';
 
 import type { Logger } from 'pino';
 
-import type { AppConfig } from '../config/env.js';
+import { MAX_API_TOKEN_CHARACTERS, type AppConfig } from '../config/env.js';
 import { AGENT_TYPES, type AgentType } from '../domain/agent.js';
 import type { CommandContext } from '../domain/command.js';
 import type { RealtimeSessionEvent } from '../domain/conversation.js';
@@ -58,6 +58,7 @@ const STATIC_ASSETS = new Map<string, string>([
   ['/index.html', 'index.html'],
   ['/app.css', 'app.css'],
   ['/app.js', 'app.js'],
+  ['/api-token-state.js', 'api-token-state.js'],
   ['/manifest.webmanifest', 'manifest.webmanifest'],
   ['/service-worker.js', 'service-worker.js'],
   ['/icon.svg', 'icon.svg'],
@@ -71,6 +72,7 @@ const CONTENT_TYPES = new Map<string, string>([
   ['.webmanifest', 'application/manifest+json; charset=utf-8'],
 ]);
 
+export const MAX_AUTHORIZATION_HEADER_CHARACTERS = MAX_API_TOKEN_CHARACTERS + 7;
 const MAX_JSON_BODY_BYTES = 1024 * 1024;
 
 export class HttpApiServer {
@@ -665,8 +667,13 @@ export class HttpApiServer {
     }
 
     const header = request.headers.authorization;
-    const providedBearer = header?.match(/^Bearer\s+(.+)$/iu)?.[1]?.trim() ?? null;
-    const providedRaw = request.headers['x-asb-token']?.toString() ?? null;
+    const providedBearer = parseBearerToken(header);
+    const rawHeader = request.headers['x-asb-token'];
+    const providedRaw =
+      typeof rawHeader === 'string' &&
+      rawHeader.length <= MAX_API_TOKEN_CHARACTERS
+        ? rawHeader
+        : null;
     const providedToken = providedBearer ?? providedRaw;
 
     if (!providedToken || !tokensMatch(providedToken, token)) {
@@ -841,10 +848,70 @@ export class HttpApiServer {
   }
 }
 
-function tokensMatch(provided: string, expected: string): boolean {
-  const providedDigest = createHash('sha256').update(provided).digest();
-  const expectedDigest = createHash('sha256').update(expected).digest();
+export function parseBearerToken(header: string | undefined): string | null {
+  if (!header) {
+    return null;
+  }
+
+  if (header.slice(0, 6).toLowerCase() !== 'bearer') {
+    return null;
+  }
+
+  if (header.length === 6) {
+    return '';
+  }
+
+  const delimiter = header.charCodeAt(6);
+  if (delimiter !== 0x20) {
+    // A following RFC tchar means this is a different (longer) auth scheme,
+    // while any other delimiter is a malformed Bearer attempt that must not
+    // fall back to the alternate token header.
+    return isHttpTokenCharacter(delimiter) ? null : '';
+  }
+
+  // Preserve the distinction between an absent Bearer scheme (null) and a
+  // present but invalid credential ('') so malformed Authorization headers
+  // cannot unexpectedly fall back to X-ASB-Token.
+  if (header.length > MAX_AUTHORIZATION_HEADER_CHARACTERS) {
+    return '';
+  }
+
+  let tokenStart = 7;
+  while (header.charCodeAt(tokenStart) === 0x20) {
+    tokenStart += 1;
+  }
+
+  let tokenEnd = header.length;
+  while (tokenEnd > tokenStart && header.charCodeAt(tokenEnd - 1) === 0x20) {
+    tokenEnd -= 1;
+  }
+
+  for (let index = tokenStart; index < tokenEnd; index += 1) {
+    const character = header.charCodeAt(index);
+    if (character < 0x21 || character > 0x7e) {
+      return '';
+    }
+  }
+
+  return header.slice(tokenStart, tokenEnd);
+}
+
+export function tokensMatch(provided: string, expected: string): boolean {
+  // These ephemeral digests only normalize bearer token values to a fixed
+  // length for timingSafeEqual. They are never stored or exposed and are not
+  // password verifiers. UTF-16LE preserves exact JavaScript code units.
+  const providedDigest = createHash('sha256').update(provided, 'utf16le').digest();
+  const expectedDigest = createHash('sha256').update(expected, 'utf16le').digest();
   return timingSafeEqual(providedDigest, expectedDigest);
+}
+
+function isHttpTokenCharacter(character: number): boolean {
+  return (
+    (character >= 0x30 && character <= 0x39) ||
+    (character >= 0x41 && character <= 0x5a) ||
+    (character >= 0x61 && character <= 0x7a) ||
+    "!#$%&'*+-.^_`|~".includes(String.fromCharCode(character))
+  );
 }
 
 export function parseHostHeader(header: string): string {

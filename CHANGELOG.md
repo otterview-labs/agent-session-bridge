@@ -21,6 +21,9 @@ Notable changes to Agent Session Bridge are documented here.
 - Hardened terminal command classification against shell-composition and write-capable option bypasses.
 - Added canonical-path checks to prevent workspace symlink escapes.
 - Added bounded JSON request bodies, constant-time token comparison, security headers, and sanitized internal errors.
+- Replaced backtracking Bearer parsing with bounded linear parsing.
+- Aligned API token configuration and HTTP transport limits to visible ASCII values of at most 4096 characters.
+- Removed browser API tokens from Web Storage and purged values left by earlier versions.
 
 ## 0.1.0 - 2026-04-18
 

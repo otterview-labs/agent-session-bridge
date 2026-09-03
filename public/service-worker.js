@@ -1,4 +1,4 @@
-const SHELL_CACHE = 'asb-shell-v3';
+const SHELL_CACHE = 'asb-shell-v4';
 
 const SHELL_NAVIGATIONS = new Set(['/', '/ui', '/index.html']);
 
@@ -7,6 +7,7 @@ const SHELL_ASSETS = [
   '/index.html',
   '/app.css',
   '/app.js',
+  '/api-token-state.js',
   '/manifest.webmanifest',
   '/icon.svg',
 ];
@@ -23,7 +24,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((key) => key !== SHELL_CACHE)
+          .filter((key) => key.startsWith('asb-shell-') && key !== SHELL_CACHE)
           .map((key) => caches.delete(key)),
       ),
     ),
