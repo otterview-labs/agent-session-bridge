@@ -21,6 +21,7 @@ test('service worker upgrades safe shell assets without caching private routes',
         'asb-shell-v2',
         'asb-shell-v3',
         'asb-shell-v4',
+        'asb-shell-v5',
         'unrelated-cache',
       ],
       match: async () => undefined,
@@ -77,7 +78,7 @@ test('service worker upgrades safe shell assets without caching private routes',
   });
   assert.ok(activation);
   await activation;
-  assert.deepEqual(deletedCaches, ['asb-shell-v2', 'asb-shell-v3']);
+  assert.deepEqual(deletedCaches, ['asb-shell-v2', 'asb-shell-v3', 'asb-shell-v4']);
 
   let intercepted = false;
   fetchListener({

@@ -1585,7 +1585,7 @@ function renderButler() {
     overview ? (overview.serverManager?.available ? 'ok' : 'danger') : 'muted',
     overview?.serverManager?.available
       ? 'server-manager 已接入'
-      : overview?.serverManager?.reason || (overview ? 'server-manager 未接入' : '管家初始化中'),
+      : overview?.serverManager?.reason || (overview ? 'server-manager 未接入' : '正在加载服务状态'),
   );
 
   renderButlerRuntimes(runtimes);
